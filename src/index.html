@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="pl">
+    <head>
+        <title>Pogoda</title>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <link href="https://fonts.googleapis.com/css?family=Titillium+Web:300,300i,400,700&amp;subset=latin-ext" rel="stylesheet">
+        <link href="css/style.css" rel="stylesheet">
+    </head>
+    <body>
+        
+        <header class="container_site flex">
+            <div class="chooseSerwis">
+                <h2>Wybierz serwis pogodowy:</h2>
+                
+                    <input id="serwis1" type="radio" name="serwis" value="Serwis1" checked>
+                    <label for="serwis1">Serwis1</label>
+                    
+                    <input id="serwis2" type="radio" name="serwis" value="Serwis2">
+                    <label for="serwis2">Serwis2</label>
+                    
+                    <input id="serwis3" type="radio" name="serwis" value="Serwis3" disabled>
+                    <label for="serwis3">Serwis3</label>                  
+            </div>
+            <div class="citySearch">
+                <h2>Wyszukaj miasto:</h2>
+                <form>
+                    <input type="text" id="citySearch">
+                    <button id="searchCityBtn" type="button" class="btn btn_search">Szukaj</button>
+                    <button id="searchAndSaveCityBtn" type="button" class="btn btn_search">Szukaj i zapisz miasto</button>
+                </form>
+            </div>
+
+            <div class="cityChoose hidden">
+                <h3 class="alert alert_info">Znaleziono więcej niż jedno miasto. Wybierz miasto, które Cię interesuje:</h3>
+                <ul  id="cityChooseList" class="flex">                    
+                </ul>
+
+            </div>
+            <div class="saveCities hidden">
+                <h3>Lista zapisanych miast:</h3>
+                <ul id="saveCitiesList" class="flex">
+                    
+                </ul>
+            </div>
+
+                
+
+        </header>
+
+    <script src="js/script.js"></script>
+    </body>
+</html>

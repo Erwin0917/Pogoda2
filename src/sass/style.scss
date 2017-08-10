@@ -1,0 +1,192 @@
+$main-color: black;
+
+$second-color: white;
+
+$text-color: black;
+
+$inputChecked: rgb(153, 255, 0);
+
+$errorColor: #CC0000;
+
+$infoColor: #FFCC00;
+
+html{
+    font-size: 10px;
+    font-family: 'Titillium Web', sans-serif;
+}
+p{
+    font-size: 1.6rem;
+}
+h2{
+    font-size: 2.4rem;
+}
+h3{
+    font-size: 1.6rem;
+}
+ul{
+        list-style: none;
+        padding: 0;
+        li{
+            font-size: 1.5rem;
+            padding: 5px 7px;
+        }
+    }
+
+*,*:before,*:after{
+  box-sizing: inherit;
+}
+
+.flex{
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+}
+
+.container{
+    margin: 0 auto;
+    &_site{
+        max-width: 900px;
+        margin: 0 auto;
+    }
+}
+label,
+input[type="text"],
+.btn{
+        position: relative;
+        font-size: 1.4rem;
+        border: 2px solid black;
+        margin: 0 10px;
+        
+        padding: 3px 7px;
+}
+.hidden{
+    display: none;
+}
+
+
+
+// button's classes
+.btn{
+    background-color:white; 
+    cursor: pointer;
+    transition: all .2s linear;
+    
+    &:hover{
+        box-shadow: 1px 1px 15px 0 rgba($infoColor,1);
+        background-color: $infoColor;
+    }
+    &_search{
+        margin: 0; 
+    }
+}
+
+
+// alert panel's classes
+.alert{
+    font-size: 1.6rem;
+    padding: 10px;
+    &_info{
+        background-color: rgba($infoColor,0.5)
+    }
+}
+
+
+
+
+
+// Wybór serwisów
+.chooseSerwis{
+    padding: 10px;
+    label{
+        
+        
+        
+        padding-left: 28px;
+        cursor: pointer;
+        
+
+        
+        &:before{
+            content: "";
+            position: absolute;
+            left: 5px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 11px;
+            height: 11px;
+            border: 1px solid black;
+        }
+    }
+    input[type="radio"]{
+        display: none;
+    }
+    input:checked + label{
+        box-shadow: 3px 1px 30px rgba($inputChecked,0.8);
+        &:before{
+            
+            background:$inputChecked;
+        }
+    }
+    input:disabled + label{
+        background: #efefef;
+        color: rgba(black,.5);
+        cursor: not-allowed;
+        
+
+        &:hover{
+            border-color: rgba(black,.1);
+        }
+
+        &:before{
+            border-color: white;
+            background: white;
+        }
+    } 
+    
+}
+.cityChoose{
+    flex: 100%;
+    padding: 10px;
+    ul{
+        justify-content: space-around;
+        li{
+            display: inline-block;
+            border: 2px dashed $infoColor;
+            margin: 10px 0;
+            cursor: pointer;
+            transition: all .2s linear;
+            &:hover{
+                border: 2px solid $infoColor;
+                background-color: #efefef;
+            }
+            
+        }
+    }
+    .alert{
+        width: 100%;
+    }
+}
+
+//zapisane miasta
+
+.saveCities{
+    background-color: #efefef;
+    flex: 100%;
+    padding: 10px;
+    
+    .flex{
+        justify-content: flex-start;
+
+        li{
+            border: 2px dashed $main-color;
+            margin: 10px;
+            cursor: pointer;
+            transition: all .2s linear;
+
+            &:hover{
+                border: 2px solid $main-color;
+                background-color: $second-color;
+            }
+        }
+    }
+}
