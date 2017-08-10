@@ -1,3 +1,8 @@
+// ***********   Dodawanie do zapisanych z listy znalezionym wielu miast
+
+
+
+
 (function(){
 
 ///////////////////////////////////////////////////////////////////
@@ -90,7 +95,12 @@ const controller = {
             
             
         }else{
-            
+
+
+
+            // *************  
+
+
         }
     },
 
@@ -143,9 +153,24 @@ const controller = {
     //wybranie miasta z listy znalezionych miast lub zapisanych miast
     selectedCity(e, citiesArr){
         let target = e.target.innerText,
-            arrayCity = target.split(",");
+            arrayCity = target.split(","),
+            citiesArrTemp = [];
+
+            console.log(target);
 
             
+        
+        if( citiesArr.constructor == Storage ){
+            for( let i = 0; i < citiesArr.length; i++ ){
+                let city = `city${i}`,
+                    parseCity = JSON.parse(citiesArr.getItem(city));
+                
+                citiesArrTemp.push(parseCity);
+            }
+            citiesArr = citiesArrTemp;  // jeśli pobieramy dane z local Storage to przypisujemy je do tymczasowej tablicy żeby łatwiej wyciągnąć dane   
+        }
+
+        
         
 
         for(let cityObj of citiesArr){
@@ -154,10 +179,13 @@ const controller = {
             if(arrayCity[0] == cityObj.address_components[0].long_name && arrayCity[1].trim() == cityObj.address_components[1].short_name){
                 view.hidden(outputFindMoreContainer);
                 this.findWeather(cityObj);
+                console.log(cityObj);
+                
             }
 
         }
 
+        
         
     },
 
@@ -346,5 +374,10 @@ btnSearchAndSave.addEventListener('click', controller.run, false);
 outputFindMoreContainer.addEventListener('click',function(e){
     controller.selectedCity(e, findCitiesArr);
 }, false);
+
+saveCitiesContainer.addEventListener('click',function(e){
+    controller.selectedCity(e, localStorage);
+}, false);
+
 
 })();
