@@ -1,4 +1,4 @@
-// ***********   Dodawanie do zapisanych z listy znalezionym wielu miast
+// ***********   Przekazanie informacji do pierwszego serwisu pogodowego
 
 
 
@@ -12,7 +12,7 @@
 
 class getData {
 
-    static getJSON(url, success, fail){
+    static getJSON(url, successFn, failFn){
         const xhr = new XMLHttpRequest();
 
         let data = null;
@@ -22,11 +22,11 @@ class getData {
         xhr.onreadystatechange = function(){
             if (xhr.readyState === 4 && xhr.status >= 200 && xhr.status < 300) {
                 data = JSON.parse(xhr.response);
-                controller.success(data);
+                successFn(data);
             }
         };
         xhr.onerror = function(error){
-            controller.fail(error);
+            failFn(error);
         };
 
 
@@ -34,6 +34,44 @@ class getData {
     }
 
 }
+///////////////////////////////////////////////////////////////////
+// Pomocnicze
+//////////////////////////////////////////////////////////////////
+function replaceLatin(w) {
+    
+        if (w) {
+    
+            if (w === "ę") return "e";
+            if (w === "ó") return "o";
+            if (w === "ą") return "a";
+            if (w === "ś") return "s";
+            if (w === "ł") return "l";
+            if (w === "ż") return "z";
+            if (w === "ź") return "z";
+            if (w === "ć") return "c";
+            if (w === "ń") return "n";
+        }
+    
+    };
+    function findLatin(string) {
+        let reg = /[ęóąśłżźćń]/ig;
+        string = string.toLowerCase();
+        let stringArr = [...string],
+            newString = "";
+    
+    
+        for (let w of stringArr) {
+            w = w.replace(reg, replaceLatin(w));
+    
+            newString += w;
+        }
+        if (newString) {
+            return newString;
+        }
+    
+    
+    };
+
 
 
 ///////////////////////////////////////////////////////////////////
@@ -49,8 +87,8 @@ const  btnSerch = document.querySelector('#searchCityBtn'),
         saveCitiesContainer = document.querySelector(".saveCities"),
         findCitiesArr = [];
 
-
-let   currentCity = null;
+let    currentCity = null,
+       isSaveBtn = false;
 
 
 ///////////////////////////////////////////////////////////////////
@@ -62,6 +100,7 @@ const controller = {
     //uruchamianie wszystkich zależności
     run(e){
         view.hidden(outputFindMoreContainer);
+        isSaveBtn = false;
         
         
 
@@ -77,33 +116,43 @@ const controller = {
             
         }if( target === btnSearchAndSave ) {
             controller.services.google.findCityGoogle(userCity);
-            controller.addToSaveCities(currentCity);
+            isSaveBtn = true;
+            try {
+                controller.addToSaveCities(currentCity);
+            } catch (e) {
+                // nic nie rob 
+            }
+
+            
         }
             
 
     },
    
-    //funkcja uruchamiana po poprawnym otrzymaniu danych z serwisów, sprawdza z jakiego serwisu są dane
-    success(data){
-        if( typeof data.results === "object" ){ // object od google !! objekt z pola "Wyszukaj miasto" !!
-            let city =  (data.results.length > 1) ? this.googleFindMoreThanOne(data.results) : this.findWeather(data.results[0]);
-            if(city){
-                for(simpleCity of city){
-                findCitiesArr.push(simpleCity);
-                }
+    //metoty uruchamiane po otrzymaniu danych z zewnętrznych serwisów
+    success:{
+        google(data){
+            if( typeof data.results === "object" ){ 
+                let city =  (data.results.length > 1) ? controller.googleFindMoreThanOne(data.results) : controller.findWeather(data.results[0]);
+                if(city){
+                    for(simpleCity of city){
+                        findCitiesArr.push(simpleCity);
+                    }
+                }                       
+            }else{
+                console.log("Google API Error");
             }
-            
-            
-        }else{
-
-
-
-            // *************  
-
-
+        },
+        openWeatherMap(data){// przekazanie danych z serwisu do sformatowania, nastepnie sformatowane dane do wyswietlenia na stronie
+            let obj = controller.services.openWeatherMap.currentWeatherFormatObj(data);
+            console.log(`Z Open Weather: ${obj}`);
+        },
+        wunderground(data){
+            console.log(data);
         }
-    },
 
+    },
+ 
     //funkcja uruchamiana gdy otrzymujemy bład podczas XMLHttpRequest
     fail(error){
         console.log(error);
@@ -115,8 +164,35 @@ const controller = {
         google:{
             //sprawdzanie miasta w google maps api
             findCityGoogle(city){
-                getData.getJSON(`https://maps.googleapis.com/maps/api/geocode/json?address=${city}&key=AIzaSyBOcdzymZk4GJtOABc4LSKl-Ks7ny2HMuk`, this.success, this.fail);
+                getData.getJSON(`https://maps.googleapis.com/maps/api/geocode/json?address=${city}&key=AIzaSyBOcdzymZk4GJtOABc4LSKl-Ks7ny2HMuk`, controller.success.google, this.fail);
             }         
+        },
+        openWeatherMap:{
+            api: "f75b72b2175576ad82691adb3942da28",
+            getCurrent(lat, lon){
+                getData.getJSON(`http://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${controller.services.openWeatherMap.api}`, controller.success.openWeatherMap, this.fail);
+            },
+            currentWeatherFormatObj(dataObj){
+
+                let {
+                    main:{
+                        humidity,
+                        pressure,
+                        temp
+                    }
+                } = dataObj;
+
+                temp = `${(temp - 273.15).toFixed(2)}`;
+                
+                return {humidity, pressure, temp};
+            }
+        },
+        wunderground:{
+            api: "3f4302cb35f1273e",
+            getCurrent(country, city){
+                getData.getJSON(`http://api.wunderground.com/api/${controller.services.wunderground.api}/conditions/lang:PL/q/${country}/${city}.json}`, controller.success.wunderground, this.fail);
+            }
+
         }
     },
     
@@ -156,7 +232,7 @@ const controller = {
             arrayCity = target.split(","),
             citiesArrTemp = [];
 
-            console.log(target);
+            
 
             
         
@@ -179,7 +255,10 @@ const controller = {
             if(arrayCity[0] == cityObj.address_components[0].long_name && arrayCity[1].trim() == cityObj.address_components[1].short_name){
                 view.hidden(outputFindMoreContainer);
                 this.findWeather(cityObj);
-                console.log(cityObj);
+
+                if(isSaveBtn){//jeśli było naciśniecie przycisku zapisz dodaje z listy znalezionych do zapisanych
+                    controller.addToSaveCities(cityObj);
+                }
                 
             }
 
@@ -192,6 +271,39 @@ const controller = {
     //metoda jeśli zostało wybrane konkretne miasto
     findWeather(cityObj){
         currentCity = cityObj;
+
+        let servis = this.selectedServis();
+
+        let {geometry:{
+                location:{
+                    lat,
+                    lng:lon
+                    }
+            },
+            address_components:{
+                0:{
+                    long_name:cityName
+                },
+                3:{
+                    short_name:country
+                }
+            }
+
+        } = cityObj;
+
+        
+        switch (servis) {
+            case "OpenWeatherMap":
+                this.services.openWeatherMap.getCurrent(lat,lon);               
+                break;
+
+            case "Wunderground":
+                cityName = findLatin(cityName);
+                console.log(cityName);
+                this.services.wunderground.getCurrent(country, cityName);
+                break;
+        }
+        
         
     },
 
@@ -287,6 +399,19 @@ const controller = {
         }
 
         return obj;
+    },
+
+    //Sprawdzanie jaki serwis został wybrany, zwraca nazwe wybranego serwisu
+    selectedServis(){
+        let servis,
+            servList = document.querySelectorAll(".chooseSerwis input");
+
+            for(let elem of servList){
+                if(elem.checked){
+                    servis = elem.value;
+                }
+            }
+        return servis;
     }
 
     
@@ -319,11 +444,10 @@ const view = {
     addToNode(output, container, ...elems){
 
         let listElem = document.createElement(container);
-            elems.forEach(function(elem){
-                listElem.innerText += `${elem}, `;
-            });
-            output.appendChild(listElem);
-        return;
+ 
+        listElem.innerText += elems.join(', ');
+        output.appendChild(listElem);
+        
     },
 
     showSaveCities(){
