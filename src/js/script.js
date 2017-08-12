@@ -190,7 +190,7 @@ const controller = {
         wunderground:{
             api: "3f4302cb35f1273e",
             getCurrent(country, city){
-                getData.getJSON(`http://api.wunderground.com/api/${controller.services.wunderground.api}/conditions/lang:PL/q/${country}/${city}.json}`, controller.success.wunderground, this.fail);
+                getData.getJSON(`https://api.wunderground.com/api/${controller.services.wunderground.api}/conditions/lang:PL/q/${country}/${city}.json}`, controller.success.wunderground, this.fail);
             }
 
         }
