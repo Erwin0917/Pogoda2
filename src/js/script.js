@@ -149,6 +149,9 @@ const controller = {
         },
         wunderground(data){
             console.log(data);
+        },
+        apixu(data){
+            let obj = controller.services.apixu.currentWeatherFormatObj(data);
         }
 
     },
@@ -173,16 +176,17 @@ const controller = {
                 getData.getJSON(`http://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${controller.services.openWeatherMap.api}`, controller.success.openWeatherMap, this.fail);
             },
             currentWeatherFormatObj(dataObj){
-
+                
                 let {
                     main:{
                         humidity,
                         pressure,
                         temp
-                    }
+                    },
+
                 } = dataObj;
 
-                temp = `${(temp - 273.15).toFixed(2)}`;
+                temp = (temp - 273.15).toFixed(2);
                 
                 return {humidity, pressure, temp};
             }
@@ -190,10 +194,28 @@ const controller = {
         wunderground:{
             api: "3f4302cb35f1273e",
             getCurrent(country, city){
-                getData.getJSON(`https://api.wunderground.com/api/${controller.services.wunderground.api}/conditions/lang:PL/q/${country}/${city}.json}`, controller.success.wunderground, this.fail);
+                getData.getJSON(`https://api.wunderground.com/api/${controller.services.wunderground.api}/conditions/lang:PL/q/${country}/${city}.json`, controller.success.wunderground, this.fail);
             }
+        },
+        apixu:{
+            api: "05c3f87c24904da4821160047171208",
+            getCurrent(city){
+                getData.getJSON(`http://api.apixu.com/v1/current.json?key=${controller.services.apixu.api}&q=${city}`, controller.success.apixu, this.fail);
+            },
+            currentWeatherFormatObj(dataObj){
+                
+                let{
+                    current:{
+                        humidity,
+                        pressure_mb: pressure,
+                        temp_c: temp,
+                    }
+                } = dataObj;
 
+                return {humidity, pressure, temp};
+            }
         }
+
     },
     
     //metoda jeśli google znajdzie więcej niż jedno miasto
@@ -290,7 +312,7 @@ const controller = {
             }
 
         } = cityObj;
-
+        
         
         switch (servis) {
             case "OpenWeatherMap":
@@ -299,8 +321,12 @@ const controller = {
 
             case "Wunderground":
                 cityName = findLatin(cityName);
-                console.log(cityName);
+                
                 this.services.wunderground.getCurrent(country, cityName);
+                break;
+            
+            case "Apixu":               
+                this.services.apixu.getCurrent(cityName);
                 break;
         }
         
