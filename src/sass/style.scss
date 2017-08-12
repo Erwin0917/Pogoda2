@@ -91,7 +91,34 @@ input[type="text"],
 }
 
 
+//LogPanel
+.logPanel{
+    flex-basis: 100%;
+    background-color: #efefef;
+    height: 150px;
+    padding: 0 10px;
+    overflow-y: scroll;
+    h2{
+        margin-top: 0;
+        margin-bottom: 2px;
+        font-size: 1.8rem;
+        color: #878787;
+    }
+    ul{
+        margin-top: 0;
+    }
+    li{
+        font-size: 1.2rem;
+        span{
+            font-style: italic;
+            color: #62568c;
+        }
+    }
+    .error{
+        color: #d3080b;
+    }
 
+}
 
 
 // Wybór serwisów
