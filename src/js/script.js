@@ -173,7 +173,7 @@ const controller = {
         openWeatherMap:{
             api: "f75b72b2175576ad82691adb3942da28",
             getCurrent(lat, lon){
-                getData.getJSON(`http://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${controller.services.openWeatherMap.api}`, controller.success.openWeatherMap, this.fail);
+                getData.getJSON(`https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${controller.services.openWeatherMap.api}`, controller.success.openWeatherMap, this.fail);
             },
             currentWeatherFormatObj(dataObj){
                 
@@ -200,7 +200,7 @@ const controller = {
         apixu:{
             api: "05c3f87c24904da4821160047171208",
             getCurrent(city){
-                getData.getJSON(`http://api.apixu.com/v1/current.json?key=${controller.services.apixu.api}&q=${city}`, controller.success.apixu, this.fail);
+                getData.getJSON(`https://api.apixu.com/v1/current.json?key=${controller.services.apixu.api}&q=${city}`, controller.success.apixu, this.fail);
             },
             currentWeatherFormatObj(dataObj){
                 
