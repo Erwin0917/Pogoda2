@@ -112,9 +112,11 @@ const controller = {
         if( !userCity || !( isNaN(userCity)) ) return view.errorMsg("Podaj poprawną nazwę miasta"); //********* do poprawy walidacja  
             
         if( target === btnSerch){
+            view.logPanel("Wybranie przycisku Szukaj")
             controller.services.google.findCityGoogle(userCity);
             
         }if( target === btnSearchAndSave ) {
+            view.logPanel("Wybranie przycisku Szukaj i zapisz miasto")
             controller.services.google.findCityGoogle(userCity);
             isSaveBtn = true;
             try {
@@ -132,26 +134,39 @@ const controller = {
     //metoty uruchamiane po otrzymaniu danych z zewnętrznych serwisów
     success:{
         google(data){
+            let city = null; 
             if( typeof data.results === "object" ){ 
-                let city =  (data.results.length > 1) ? controller.googleFindMoreThanOne(data.results) : controller.findWeather(data.results[0]);
+                
+                
+                if(data.results.length > 1){
+                    city = controller.googleFindMoreThanOne(data.results);
+                }else{
+                    view.logPanel("Odpowiedz od: GOOGLE MAPS API - znalaziono miasto");
+                    controller.findWeather(data.results[0]);                  
+                }
+                 
+                console.log(city);
                 if(city){
                     for(simpleCity of city){
                         findCitiesArr.push(simpleCity);
                     }
                 }                       
-            }else{
-                console.log("Google API Error");
             }
         },
         openWeatherMap(data){// przekazanie danych z serwisu do sformatowania, nastepnie sformatowane dane do wyswietlenia na stronie
+            view.logPanel("Otrzymano dane z serwisu Open Weather Map");
             let obj = controller.services.openWeatherMap.currentWeatherFormatObj(data);
+                       
             console.log(`Z Open Weather: ${obj}`);
         },
         wunderground(data){
             console.log(data);
+            view.logPanel("Otrzymano dane z serwisu Wunderground");
         },
         apixu(data){
+            view.logPanel("Otrzymano dane z serwisu Apixu");
             let obj = controller.services.apixu.currentWeatherFormatObj(data);
+            
         }
 
     },
@@ -167,7 +182,9 @@ const controller = {
         google:{
             //sprawdzanie miasta w google maps api
             findCityGoogle(city){
+                view.logPanel("Wysłanie zapytania do GOOGLE MAPS API (walidacja nazwy miasta, sprawdzanie czy jest więcej niż jedno miasto z taką nazwą, pobranie współrzędnych geograficznych)")
                 getData.getJSON(`https://maps.googleapis.com/maps/api/geocode/json?address=${city}&key=AIzaSyBOcdzymZk4GJtOABc4LSKl-Ks7ny2HMuk`, controller.success.google, this.fail);
+                
             }         
         },
         openWeatherMap:{
@@ -176,7 +193,7 @@ const controller = {
                 getData.getJSON(`https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${controller.services.openWeatherMap.api}`, controller.success.openWeatherMap, this.fail);
             },
             currentWeatherFormatObj(dataObj){
-                
+                view.logPanel("Formatowanie danych otrzymanych od Open Weather Map");
                 let {
                     main:{
                         humidity,
@@ -203,7 +220,7 @@ const controller = {
                 getData.getJSON(`https://api.apixu.com/v1/current.json?key=${controller.services.apixu.api}&q=${city}`, controller.success.apixu, this.fail);
             },
             currentWeatherFormatObj(dataObj){
-                
+                view.logPanel("Formatowanie danych otrzymanych od Apixu");
                 let{
                     current:{
                         humidity,
@@ -242,7 +259,7 @@ const controller = {
         }
 
 
-         
+        view.logPanel("Odpowiedź od: GOOGLE MAPS API - znaleziono więcej niż jedno miasto");
         return array;
        
 
@@ -259,6 +276,7 @@ const controller = {
             
         
         if( citiesArr.constructor == Storage ){
+            view.logPanel("Wybrano miasto z listy zapisanych miast");
             for( let i = 0; i < citiesArr.length; i++ ){
                 let city = `city${i}`,
                     parseCity = JSON.parse(citiesArr.getItem(city));
@@ -266,15 +284,13 @@ const controller = {
                 citiesArrTemp.push(parseCity);
             }
             citiesArr = citiesArrTemp;  // jeśli pobieramy dane z local Storage to przypisujemy je do tymczasowej tablicy żeby łatwiej wyciągnąć dane   
-        }
+        }else view.logPanel("Wybrano miasto z listy znalezionych");
 
-        
-        
-
+    
         for(let cityObj of citiesArr){
 
-
             if(arrayCity[0] == cityObj.address_components[0].long_name && arrayCity[1].trim() == cityObj.address_components[1].short_name){
+                
                 view.hidden(outputFindMoreContainer);
                 this.findWeather(cityObj);
 
@@ -285,13 +301,14 @@ const controller = {
             }
 
         }
-
+        
         
         
     },
 
     //metoda jeśli zostało wybrane konkretne miasto
     findWeather(cityObj){
+        
         currentCity = cityObj;
 
         let servis = this.selectedServis();
@@ -316,16 +333,19 @@ const controller = {
         
         switch (servis) {
             case "OpenWeatherMap":
+                view.logPanel("Wysłanie zapytania o aktualną pogodę do seriwsu Open Weather Map");
                 this.services.openWeatherMap.getCurrent(lat,lon);               
                 break;
 
             case "Wunderground":
                 cityName = findLatin(cityName);
                 
+                view.logPanel("Wysłanie zapytania o aktualną pogodę do seriwsu Wunderground");
                 this.services.wunderground.getCurrent(country, cityName);
                 break;
             
-            case "Apixu":               
+            case "Apixu":
+                view.logPanel("Wysłanie zapytania o aktualną pogodę do seriwsu Apixu");               
                 this.services.apixu.getCurrent(cityName);
                 break;
         }
@@ -471,7 +491,7 @@ const view = {
 
         let listElem = document.createElement(container);
  
-        listElem.innerText += elems.join(', ');
+        listElem.innerHTML += elems.join(', ');
         output.appendChild(listElem);
         
     },
@@ -496,6 +516,16 @@ const view = {
             view.addToNode(citiesList, "li", city, province, country);
         });
 
+    },
+    logPanel(msg, error = null){
+        const logContainer = document.querySelector(".logPanel_list");
+
+        let date = new Date(),
+            time = `${date.getHours()}:${date.getMinutes()}:${date.getSeconds()}::${date.getMilliseconds()}ms `
+
+        let logMsg = `<span>${time}</span> -- ${msg}`
+
+        this.addToNode(logContainer, "li", logMsg);
     }
 };
 
