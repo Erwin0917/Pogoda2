@@ -220,3 +220,154 @@ input[type="text"],
         }
     }
 }
+
+//pogoda wyswietlanie
+.wheather-container{
+    flex-basis: 100%;
+    .wheater{
+        margin: 40px 0;
+        display: flex;
+        justify-content: center;
+        flex-wrap: wrap;
+        
+        &:nth-child(odd){
+            .current{
+                background-color: rgba($infoColor, 0.4);
+            }
+            
+            .forecast{
+                &-box{
+                    p{
+                        background-color: $infoColor;
+                    }
+                    li{
+                        background-color: rgba($infoColor, 0.2);;
+                    }
+                }
+            }
+        }
+    }
+    .current{
+        flex-basis: 100%;
+        background-color: #D6FF99;
+        ul{
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            li{
+                position: relative;
+                display: inline-block;
+                padding-right: 40px;
+                margin: 0 20%;
+            }
+            li::before{
+                content: "";
+                display: block;
+                position: absolute;
+                background-repeat: no-repeat;
+                background-size: contain;
+                width: 30px;
+                height: 18px;
+                right: 0px;
+                top: 50%;
+                transform: translateY(-50%);
+            }
+            li:first-child::before{
+                background-image: url(../img/temp.svg);
+            }
+            li:nth-child(2)::before{
+                background-image: url(../img/pressure.svg);
+            }
+            li:last-child::before{
+                background-image: url(../img/humidity.svg);
+            }
+        }
+        &-box{
+            border: 1px solid black;
+            padding: 5px;
+            text-align: center;
+
+            h3{
+                margin: 5px 0;
+            }
+
+            li{
+                padding: 2px 7px;
+            }
+        }
+    }
+    .forecast{
+        flex-basis: 100%;
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        background-color: white;
+        
+
+        &-box{
+            border: 1px solid black;
+            border-top: 0;
+            margin: 0 10px;
+            
+
+            p{
+                font-weight: bold;
+                text-align: center;
+                margin: 0;
+                padding: 2px 0;
+                font-size: 1.4rem;
+                background-color: $inputChecked;
+            }
+            li{
+                display: inline-block;
+                position: relative;
+                border-right: 1px solid black;
+                border-top: 0;
+                font-size: 1.3rem;
+                font-weight: bold;
+                padding-left: 22px;
+                background-color: rgba($inputChecked,0.2);
+                &::before{
+                    content: "";
+                    display: block;
+                    position: absolute;
+                    background-repeat: no-repeat;
+                    background-size: contain;
+                    width: 30px;
+                    height: 18px;
+                    left: 4px;
+                    top: 50%;
+                    transform: translateY(-50%);
+                }
+                &:last-child{
+                    color: blue;
+                    border-right: 0;
+                    &::before{
+                        background-image: url(../img/humidity.svg);
+                    }
+                }
+                &:nth-child(2){
+                    padding-left: 28px;
+                    &::before{
+                        background-image: url(../img/pressure.svg);
+                        left: 8px;
+                    }
+                }
+                &:first-child{
+                    color: red;
+                    &::before{
+                        background-image: url(../img/temp.svg);
+                    }
+
+                }
+                
+            }
+            ul{
+                margin: 0;
+                padding: 0;
+
+            }
+            
+        }
+    }
+}

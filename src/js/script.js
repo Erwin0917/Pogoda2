@@ -1,8 +1,3 @@
-// ***********   Przekazanie informacji do pierwszego serwisu pogodowego
-
-
-
-
 (function(){
 
 ///////////////////////////////////////////////////////////////////
@@ -12,25 +7,35 @@
 
 class getData {
 
-    static getJSON(url, successFn, failFn){
+    static getJSON(url){
         const xhr = new XMLHttpRequest();
 
         let data = null;
 
-        xhr.open("GET", url, false);
+        xhr.open("GET", url);
 
-        xhr.onreadystatechange = function(){
-            if (xhr.readyState === 4 && xhr.status >= 200 && xhr.status < 300) {
-                data = JSON.parse(xhr.response);
-                successFn(data);
-            }
-        };
-        xhr.onerror = function(error){
-            failFn(error);
-        };
+        let p = new Promise( function(resolve, reject){
+
+            xhr.onreadystatechange = function(){
+                if (xhr.readyState === 4 && xhr.status >= 200 && xhr.status < 300) {
+                    data = JSON.parse(xhr.response);
+                    resolve(data);
+                }
+            };
+
+            xhr.onerror = function(){
+                reject(view.logPanel("Wystąpił błąd pobierania danych"),
+                        new Error("Wystąpił błąd pobierania danych"));
+            };
+        });
+
+        
+        
 
 
         xhr.send(null);
+
+        return p;
     }
 
 }
@@ -155,9 +160,12 @@ const controller = {
         },
         openWeatherMap(data){// przekazanie danych z serwisu do sformatowania, nastepnie sformatowane dane do wyswietlenia na stronie
             view.logPanel("Otrzymano dane z serwisu Open Weather Map");
-            let obj = controller.services.openWeatherMap.currentWeatherFormatObj(data);
-                       
-            console.log(`Z Open Weather: ${obj}`);
+
+            let current = controller.services.openWeatherMap.currentWeatherFormatObj(data[0]),   //data[0] aktualna pogoda        
+                forecast = controller.services.openWeatherMap.forecastFormatObj(data[1]);        //data[1] prognoza pogody       
+
+            view.showWheater(current, forecast ,"Open Weather Map");
+            
         },
         wunderground(data){
             console.log(data);
@@ -165,8 +173,10 @@ const controller = {
         },
         apixu(data){
             view.logPanel("Otrzymano dane z serwisu Apixu");
-            let obj = controller.services.apixu.currentWeatherFormatObj(data);
-            
+            let current = controller.services.apixu.currentWeatherFormatObj(data[0]),
+                forecast = controller.services.apixu.forecastFormatObj(data[1]["forecast"]);
+
+            view.showWheater(current, forecast ,"APIXU");
         }
 
     },
@@ -183,44 +193,86 @@ const controller = {
             //sprawdzanie miasta w google maps api
             findCityGoogle(city){
                 view.logPanel("Wysłanie zapytania do GOOGLE MAPS API (walidacja nazwy miasta, sprawdzanie czy jest więcej niż jedno miasto z taką nazwą, pobranie współrzędnych geograficznych)")
-                getData.getJSON(`https://maps.googleapis.com/maps/api/geocode/json?address=${city}&key=AIzaSyBOcdzymZk4GJtOABc4LSKl-Ks7ny2HMuk`, controller.success.google, this.fail);
+                getData.getJSON(`https://maps.googleapis.com/maps/api/geocode/json?address=${city}&key=AIzaSyBOcdzymZk4GJtOABc4LSKl-Ks7ny2HMuk`)
+                .then(controller.success.google)
+                .catch(this.fail);
                 
             }         
         },
         openWeatherMap:{
             api: "f75b72b2175576ad82691adb3942da28",
-            getCurrent(lat, lon){
-                getData.getJSON(`https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${controller.services.openWeatherMap.api}`, controller.success.openWeatherMap, this.fail);
-            },
+            getWheater(lat, lon){
+                Promise.all([
+                    getData.getJSON(`https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${controller.services.openWeatherMap.api}`),// pobieranie aktualnej pogody
+                    getData.getJSON(`https://api.openweathermap.org/data/2.5/forecast?lat=${lat}&lon=${lon}&units=metric&lang=pl&appid=${controller.services.openWeatherMap.api}`)//pobieranie prognozy pogody
+                ])
+                .then(controller.success.openWeatherMap)
+                .catch(this.fail);
+                               
+            }, 
             currentWeatherFormatObj(dataObj){
-                view.logPanel("Formatowanie danych otrzymanych od Open Weather Map");
-                let {
-                    main:{
-                        humidity,
-                        pressure,
-                        temp
-                    },
-
-                } = dataObj;
-
-                temp = (temp - 273.15).toFixed(2);
+                view.logPanel("Formatowanie danych otrzymanych od Open Weather Map (pogoda aktualna)");
                 
-                return {humidity, pressure, temp};
-            }
+                    let {
+                        main:{
+                            humidity,
+                            pressure,
+                            temp
+                        },
+    
+                    } = dataObj;
+    
+                    temp = (temp - 273.15).toFixed(2);
+                    return {temp, pressure, humidity};
+                             
+            },
+            forecastFormatObj(dataObj){
+                view.logPanel("Formatowanie danych otrzymanych od Open Weather Map (prognoza pogody)");
+
+                    let forecastArr = [];
+                    for (let obj of (dataObj.list) ){
+                        
+                        if(obj.dt_txt.includes("12:00:00")){
+                            let {
+                                dt_txt: date,
+                                main:{
+                                    temp,
+                                    humidity,
+                                    pressure
+                                }
+                            } = obj;
+
+                            date = date.slice(0, 10);
+                            forecastArr.push({date, temp, pressure, humidity});
+                        }
+
+                    }
+                    return forecastArr;
+                
+            }          
         },
         wunderground:{
             api: "3f4302cb35f1273e",
-            getCurrent(country, city){
-                getData.getJSON(`https://api.wunderground.com/api/${controller.services.wunderground.api}/conditions/lang:PL/q/${country}/${city}.json`, controller.success.wunderground, this.fail);
+            getWheater(country, city){
+                Promise.all([
+                    getData.getJSON(`https://api.wunderground.com/api/${controller.services.wunderground.api}/conditions/lang:PL/q/${country}/${city}.json`),
+                ])
+                .than(controller.success.wunderground)
+                .catch(this.fail)
             }
         },
         apixu:{
             api: "05c3f87c24904da4821160047171208",
-            getCurrent(city){
-                getData.getJSON(`https://api.apixu.com/v1/current.json?key=${controller.services.apixu.api}&q=${city}`, controller.success.apixu, this.fail);
+            getWheater(lat, lon){
+                Promise.all([
+                    getData.getJSON(`https://api.apixu.com/v1/current.json?key=${controller.services.apixu.api}&q=${lat},${lon}`),
+                    getData.getJSON(`https://api.apixu.com/v1/forecast.json?key=${controller.services.apixu.api}&q=${lat},${lon}&days=5`)
+                ])
+                .then(controller.success.apixu)
+                .catch(this.fail)
             },
             currentWeatherFormatObj(dataObj){
-                view.logPanel("Formatowanie danych otrzymanych od Apixu");
+                view.logPanel("Formatowanie danych otrzymanych od Apixu (aktualna pogoda)");
                 let{
                     current:{
                         humidity,
@@ -229,8 +281,25 @@ const controller = {
                     }
                 } = dataObj;
 
-                return {humidity, pressure, temp};
+                return {temp, pressure, humidity};
+            },
+            forecastFormatObj(dataObj){
+                view.logPanel("Formatowanie danych otrzymanych od Apixu (prognoza pogody)");
+                let forecastArr = [];
+                for(let day of dataObj["forecastday"]){
+                    let {
+                        date,
+                        day:{
+                            avghumidity: humidity,
+                            avgtemp_c: temp
+                        }
+                    } = day;
+                    let pressure = "b/d";
+                    forecastArr.push({date, temp, pressure, humidity});
+                }
+                return forecastArr;
             }
+            
         }
 
     },
@@ -334,19 +403,19 @@ const controller = {
         switch (servis) {
             case "OpenWeatherMap":
                 view.logPanel("Wysłanie zapytania o aktualną pogodę do seriwsu Open Weather Map");
-                this.services.openWeatherMap.getCurrent(lat,lon);               
+                this.services.openWeatherMap.getWheater(lat,lon);            
                 break;
 
             case "Wunderground":
-                cityName = findLatin(cityName);
+                cityName = findLatin(cityName); // usunięcie polskich znaków z nazwy miasta jeśli takie są
                 
                 view.logPanel("Wysłanie zapytania o aktualną pogodę do seriwsu Wunderground");
-                this.services.wunderground.getCurrent(country, cityName);
+                this.services.wunderground.getWheater(country, cityName);
                 break;
             
             case "Apixu":
                 view.logPanel("Wysłanie zapytania o aktualną pogodę do seriwsu Apixu");               
-                this.services.apixu.getCurrent(cityName);
+                this.services.apixu.getWheater(lat, lon);
                 break;
         }
         
@@ -415,7 +484,7 @@ const controller = {
                     }
                                
                 }
-                
+                view.logPanel("Dodanie miasta do pamięci przeglądarki");
                 localStorage.setItem(`city${storageLength}`, JSON.stringify(cityObj) ); // dodanie zapisanego miasta do localStorage
                 view.addToNode(citiesList, "li", city, province, country); // dodanie zapisanego miasta do DOM
                 
@@ -436,6 +505,7 @@ const controller = {
 
     // odczytywanie miast z local storage i przekazywanie ich w postaci tablicy
     readFromLocalStorage(){
+        view.logPanel("Odczytywanie danych z pamięci przeglądarki");
         let obj = [],
             localLength = localStorage.length;
 
@@ -449,6 +519,7 @@ const controller = {
 
     //Sprawdzanie jaki serwis został wybrany, zwraca nazwe wybranego serwisu
     selectedServis(){
+        view.logPanel("Sprawdzenie jaki serwis pogodowy został wybrany");
         let servis,
             servList = document.querySelectorAll(".chooseSerwis input");
 
@@ -500,6 +571,7 @@ const view = {
         let cityArr = controller.readFromLocalStorage(),
             citiesList = document.querySelector("#saveCitiesList");
 
+        view.logPanel("Renderowanie zapisanych miast na stronę");
         cityArr.forEach( function(elem){
             let { address_components : {
                         0 : {
@@ -513,15 +585,125 @@ const view = {
                         } 
                     }
             } = elem;
+            
             view.addToNode(citiesList, "li", city, province, country);
         });
+
+    },
+    showWheater(current, forecast, serwis){
+        view.logPanel("Renderowanie danych pogodowych na stronę");
+        const output = document.querySelector(".wheather-container"); 
+
+
+        // ********************************************** Tworzenie DOM dla aktualnej pogody
+
+        let container = document.createElement("div"); // kontener na informacje pogodowe
+        container.className = "wheater";
+
+        let currentContainer = document.createElement("div");//kontener na aktualną pogodę
+        currentContainer.className = "current";
+
+        let currentBox = document.createElement("div");// box formatujacy bierzącą pogodę
+        currentBox.className = "current-box";
+
+        let title = document.createElement("h3"); // tytuł z jakiego serwisu jest pogoda
+        title.innerText = `Pogoda z serwisu ${serwis}`; 
+
+        let currentListWrap = document.createElement("ul"); // lista z danymi pogodowymi
+
+        for(let info in current){// ustawianie elementów listy z odpowiednimi informacjami dla aktualnej pogody
+            let currentListElem = document.createElement("li");
+            switch (info){
+                case "temp":
+                currentListElem.innerText = `Aktualna temperatura: ${current[info]}°C`;
+                currentListWrap.appendChild(currentListElem);
+                break;
+
+                case "pressure":
+                currentListElem.innerText = `Ciśnienie: ${current[info]} hPa`;
+                currentListWrap.appendChild(currentListElem);
+                break;
+
+                case "humidity":
+                currentListElem.innerText = `Wilgotność: ${current[info]}%`;
+                currentListWrap.appendChild(currentListElem);
+                break;
+            }
+            
+        }
+
+        // ********************************************** Tworzenie DOM dla prognozy pogody
+
+        let forecastContainer = document.createElement("div");//kontener na prognozę pogody
+        forecastContainer.className = "forecast";
+
+ 
+
+
+        for(let day of forecast){// ustawianie elementów listy z odpowiednimi informacjami dla prognozy pogody
+
+            let forecastBox = document.createElement("div");// box formatujacy prognoze pogody
+            forecastBox.className = "forecast-box";
+
+            let forecastWrap = document.createElement("ul");
+
+            for(let innerDay in day){
+                let forecastListElem = document.createElement("li"),
+                    date = document.createElement("p");
+                switch (innerDay){
+                    case "date":
+                    date.innerText = day.date;
+                    forecastBox.appendChild(date);
+                    break;
+
+                    case "temp":
+                    forecastListElem.innerText = `${day[innerDay]}°C`;
+                    forecastWrap.appendChild(forecastListElem);
+                    break;
+    
+                    case "pressure":
+                    forecastListElem.innerText = `${day[innerDay]} hPa`;
+                    forecastWrap.appendChild(forecastListElem);
+                    break;
+    
+                    case "humidity":
+                    forecastListElem.innerText = `${day[innerDay]}%`;
+                    forecastWrap.appendChild(forecastListElem);
+                    break;
+                }
+                forecastBox.appendChild(forecastWrap);
+            }
+            forecastContainer.appendChild(forecastBox);
+
+        }
+
+
+        // pogoda aktualna
+        currentBox.appendChild(title);
+        currentBox.appendChild(currentListWrap); 
+
+        // prognoza pogody
+
+
+        //łączenie aktualnej
+        container.appendChild(currentContainer)
+                    .appendChild(currentBox);
+
+
+        //łączanie prognozy
+        container.appendChild(forecastContainer);
+
+
+        //dodawanie wszystkiego na strone
+        output.appendChild(container);
 
     },
     logPanel(msg, error = null){
         const logContainer = document.querySelector(".logPanel_list");
 
         let date = new Date(),
-            time = `${date.getHours()}:${date.getMinutes()}:${date.getSeconds()}::${date.getMilliseconds()}ms `
+            sec = date.getSeconds() < 10 ? `0${date.getSeconds()}` : date.getSeconds();
+            time = `${date.getHours()}:${date.getMinutes()}:${sec}::${date.getMilliseconds()}ms `
 
         let logMsg = `<span>${time}</span> -- ${msg}`
 
