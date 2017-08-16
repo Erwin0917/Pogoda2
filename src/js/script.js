@@ -402,19 +402,19 @@ const controller = {
         
         switch (servis) {
             case "OpenWeatherMap":
-                view.logPanel("Wysłanie zapytania o aktualną pogodę do seriwsu Open Weather Map");
+                view.logPanel("Wysłanie zapytania do seriwsu Open Weather Map");
                 this.services.openWeatherMap.getWheater(lat,lon);            
                 break;
 
             case "Wunderground":
                 cityName = findLatin(cityName); // usunięcie polskich znaków z nazwy miasta jeśli takie są
                 
-                view.logPanel("Wysłanie zapytania o aktualną pogodę do seriwsu Wunderground");
+                view.logPanel("Wysłanie zapytania do seriwsu Wunderground");
                 this.services.wunderground.getWheater(country, cityName);
                 break;
             
             case "Apixu":
-                view.logPanel("Wysłanie zapytania o aktualną pogodę do seriwsu Apixu");               
+                view.logPanel("Wysłanie zapytania do seriwsu Apixu");               
                 this.services.apixu.getWheater(lat, lon);
                 break;
         }
@@ -702,12 +702,16 @@ const view = {
         const logContainer = document.querySelector(".logPanel_list");
 
         let date = new Date(),
-            sec = date.getSeconds() < 10 ? `0${date.getSeconds()}` : date.getSeconds();
-            time = `${date.getHours()}:${date.getMinutes()}:${sec}::${date.getMilliseconds()}ms `
+            sec = date.getSeconds() < 10 ? `0${date.getSeconds()}` : date.getSeconds(),
+            min = date.getMinutes() < 10 ? `0${date.getMinutes()}` : date.getMinutes(),
+            time = `${date.getHours()}:${min}:${sec}::${date.getMilliseconds()}ms `
 
         let logMsg = `<span>${time}</span> -- ${msg}`
 
         this.addToNode(logContainer, "li", logMsg);
+     
+        document.querySelector(".logPanel").scrollTop = logContainer.scrollHeight;
+
     }
 };
 
