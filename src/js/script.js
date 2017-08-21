@@ -114,8 +114,7 @@ const controller = {
             userCity = (input.value).trim();
         
         
-        if( !userCity || !( isNaN(userCity)) ) return view.errorMsg("Podaj poprawną nazwę miasta"); //********* do poprawy walidacja  
-            
+        if( !userCity || !( isNaN(userCity)) ) return view.errorMsg("Podaj poprawną nazwę miasta");
         if( target === btnSerch){
             view.logPanel("Wybranie przycisku Szukaj")
             controller.services.google.findCityGoogle(userCity);
@@ -124,13 +123,7 @@ const controller = {
             view.logPanel("Wybranie przycisku Szukaj i zapisz miasto")
             controller.services.google.findCityGoogle(userCity);
             isSaveBtn = true;
-            try {
-                controller.addToSaveCities(currentCity);
-            } catch (e) {
-                // nic nie rob 
-            }
-
-            
+     
         }
             
 
@@ -150,7 +143,6 @@ const controller = {
                     controller.findWeather(data.results[0]);                  
                 }
                  
-                console.log(city);
                 if(city){
                     for(simpleCity of city){
                         findCitiesArr.push(simpleCity);
@@ -379,6 +371,11 @@ const controller = {
     findWeather(cityObj){
         
         currentCity = cityObj;
+        console.log(currentCity)
+        view.logPanel(`Wybrane miasto to: ${currentCity.formatted_address}`);
+        if(isSaveBtn){
+            controller.addToSaveCities(currentCity);
+        }
 
         let servis = this.selectedServis();
 
@@ -607,7 +604,7 @@ const view = {
         currentBox.className = "current-box";
 
         let title = document.createElement("h3"); // tytuł z jakiego serwisu jest pogoda
-        title.innerText = `Pogoda z serwisu ${serwis}`; 
+        title.innerText = `Pogoda z serwisu ${serwis} dla miasta : ${currentCity.formatted_address}`; 
 
         let currentListWrap = document.createElement("ul"); // lista z danymi pogodowymi
 
